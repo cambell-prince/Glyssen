@@ -367,7 +367,7 @@ namespace ProtoScript.Quote
 			{
 				if (m_nextBlockContinuesQuote)
 					m_workingBlock.MultiBlockQuote = MultiBlockQuote.Continuation;
-				m_nextBlockContinuesQuote = m_quoteLevel > 0;
+//				m_nextBlockContinuesQuote = m_quoteLevel > 0;
 				if (m_nextBlockContinuesQuote && m_workingBlock.MultiBlockQuote != MultiBlockQuote.Continuation)
 					m_workingBlock.MultiBlockQuote = MultiBlockQuote.Start;
 

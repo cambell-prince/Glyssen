@@ -524,7 +524,9 @@ namespace ProtoScript.Dialogs
 			if ((Mode & BlocksToDisplay.ExcludeUserConfirmed) > 0 && block.UserConfirmed)
 				return false;
 			if ((Mode & BlocksToDisplay.NeedAssignments) > 0)
-				return (block.UserConfirmed || block.CharacterIsUnclear());
+				//				return block.CharacterId == CharacterVerseData.UnknownCharacter;
+				return block.UserConfirmed || block.CharacterId == CharacterVerseData.UnknownCharacter;
+//			return (block.UserConfirmed || block.CharacterIsUnclear());
 			if ((Mode & BlocksToDisplay.AllExpectedQuotes) > 0)
 			{
 				if (!GetIsBlockScripture(block))
