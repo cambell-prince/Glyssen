@@ -507,5 +507,12 @@ namespace Glyssen.Dialogs
 			}
 			return matchingCharacterIds;
 		}
+
+		public void CreateNewActorAndAssignToGroup(string voiceActorName, CharacterGroup group)
+		{
+			var actor = new VoiceActor.VoiceActor { Id = 99, Name = voiceActorName };
+			m_project.VoiceActorList.AllActors.Add(actor);
+			AssignActorToGroup(actor.Id, group);
+		}
 	}
 }

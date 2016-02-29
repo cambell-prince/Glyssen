@@ -514,87 +514,89 @@ namespace Glyssen.Controls
 				DropDownWidth = TotalWidth;
 		}
 
-		/// <summary>
-		/// Raises the <see cref="E:System.Windows.Forms.Control.KeyPress"/> event.
-		/// </summary>
-		/// <param name="e">A <see cref="T:System.Windows.Forms.KeyPressEventArgs"/> that contains the event data.</param>
-		protected override void OnKeyPress(KeyPressEventArgs e)
-		{
-			int idx;
-			string toFind;
+//		/// <summary>
+//		/// Raises the <see cref="E:System.Windows.Forms.Control.KeyPress"/> event.
+//		/// </summary>
+//		/// <param name="e">A <see cref="T:System.Windows.Forms.KeyPressEventArgs"/> that contains the event data.</param>
+//		protected override void OnKeyPress(KeyPressEventArgs e)
+//		{
+//			int idx;
+//			string toFind;
 
-			if (e.KeyChar != (int)Keys.Escape && e.KeyChar != (int)Keys.Tab && e.KeyChar != (int)Keys.Enter)
-				DroppedDown = AutoDropdown;
+//			if (e.KeyChar != (int)Keys.Escape && e.KeyChar != (int)Keys.Tab && e.KeyChar != (int)Keys.Enter)
+//				DroppedDown = AutoDropdown;
 
-			if (!Char.IsControl(e.KeyChar))
-			{
-				if (AutoComplete)
-				{
-					toFind = Text.Substring(0, SelectionStart) + e.KeyChar;
-					idx = FindStringExact(toFind);
+//			if (!Char.IsControl(e.KeyChar))
+//			{
+//				if (AutoComplete)
+//				{
+//					toFind = Text.Substring(0, SelectionStart) + e.KeyChar;
+//					idx = FindStringExact(toFind);
 
-					if (idx == -1)
-					{
-						// An exact match for the whole string was not found
-						// Find a substring instead.
-						idx = FindString(toFind);
-					}
-					else
-					{
-						// An exact match was found. Close the dropdown.
-						DroppedDown = false;
-					}
+//					if (idx == -1)
+//					{
+//						// An exact match for the whole string was not found
+//						// Find a substring instead.
+//						idx = FindString(toFind);
+//					}
+//					else
+//					{
+//						// An exact match was found. Close the dropdown.
+//						DroppedDown = false;
+//					}
 
-					if (idx != -1) // The substring was found.
-					{
-						SelectedIndex = idx;
-						SelectionStart = toFind.Length;
-						SelectionLength = Text.Length - SelectionStart;
-					}
-					else // The last keystroke did not create a valid substring.
-					{
-						// If the substring is not found, cancel the keypress
-						e.KeyChar = (char)0;
-					}
-				}
-				else // AutoComplete = false. Treat it like a DropDownList by finding the
-				// KeyChar that was struck starting from the current index
-				{
-					idx = FindString(e.KeyChar.ToString(CultureInfo.InvariantCulture), SelectedIndex);
+//					if (idx != -1) // The substring was found.
+//					{
+//						SelectedIndex = idx;
+//						SelectionStart = toFind.Length;
+//						SelectionLength = Text.Length - SelectionStart;
+//					}
+//					else // The last keystroke did not create a valid substring.
+//					{
+//						// If the substring is not found, cancel the keypress
+////						e.KeyChar = (char)0;
+//						e.Handled = false;
+//						return;
+//					}
+//				}
+//				else // AutoComplete = false. Treat it like a DropDownList by finding the
+//				// KeyChar that was struck starting from the current index
+//				{
+//					idx = FindString(e.KeyChar.ToString(CultureInfo.InvariantCulture), SelectedIndex);
 
-					if (idx != -1)
-					{
-						SelectedIndex = idx;
-					}
-				}
-			}
+//					if (idx != -1)
+//					{
+//						SelectedIndex = idx;
+//					}
+//				}
+//				e.Handled = true;
+//			}
 
-			// Do no allow the user to backspace over characters. Treat it like
-			// a left arrow instead. The user must not be allowed to change the
-			// value in the ComboBox.
-			if ((e.KeyChar == (char)(Keys.Back)) && // A Backspace Key is hit
-				(AutoComplete) && // AutoComplete = true
-				(Convert.ToBoolean(SelectionStart))) // And the SelectionStart is positive
-			{
-				// Find a substring that is one character less the the current selection.
-				// This mimicks moving back one space with an arrow key. This substring should
-				// always exist since we don't allow invalid selections to be typed. If you're
-				// on the 3rd character of a valid code, then the first two characters have to
-				// be valid. Moving back to them and finding the 1st occurrence should never fail.
-				toFind = Text.Substring(0, SelectionStart - 1);
-				idx = FindString(toFind);
+//			// Do no allow the user to backspace over characters. Treat it like
+//			// a left arrow instead. The user must not be allowed to change the
+//			// value in the ComboBox.
+////			if ((e.KeyChar == (char)(Keys.Back)) && // A Backspace Key is hit
+////				(AutoComplete) && // AutoComplete = true
+////				(Convert.ToBoolean(SelectionStart))) // And the SelectionStart is positive
+////			{
+////				// Find a substring that is one character less the the current selection.
+////				// This mimicks moving back one space with an arrow key. This substring should
+////				// always exist since we don't allow invalid selections to be typed. If you're
+////				// on the 3rd character of a valid code, then the first two characters have to
+////				// be valid. Moving back to them and finding the 1st occurrence should never fail.
+////				toFind = Text.Substring(0, SelectionStart - 1);
+////				idx = FindString(toFind);
+////
+////				if (idx != -1)
+////				{
+////					SelectedIndex = idx;
+////					SelectionStart = toFind.Length;
+////					SelectionLength = Text.Length - SelectionStart;
+////				}
+////			}
 
-				if (idx != -1)
-				{
-					SelectedIndex = idx;
-					SelectionStart = toFind.Length;
-					SelectionLength = Text.Length - SelectionStart;
-				}
-			}
-
-			// e.Handled is always true. We handle every keystroke programatically.
-			e.Handled = true;
-		}
+//			e.Handled = false;
+//		}
 
 		#endregion
 

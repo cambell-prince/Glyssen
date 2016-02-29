@@ -959,7 +959,19 @@ namespace Glyssen.Dialogs
 			var dropDown = e.Control as DataGridViewComboBoxEditingControl;
 			if (dropDown == null)
 				return;
+			dropDown.DropDownStyle = ComboBoxStyle.DropDown;
+			dropDown.AutoCompleteMode = AutoCompleteMode.SuggestAppend;
 			dropDown.DropDownClosed += DropDownOnDropDownClosed;
+		}
+
+		private void m_characterGroupGrid_CellValidating(object sender, DataGridViewCellValidatingEventArgs e)
+		{
+			if (e.ColumnIndex == VoiceActorCol.DisplayIndex && !VoiceActorCol.Items.Contains(e.FormattedValue))
+			{
+				m_actorAssignmentViewModel.CreateNewActorAndAssignToGroup(e.FormattedValue.ToString(), FirstSelectedCharacterGroup);
+				VoiceActorCol.DataSource = m_actorAssignmentViewModel.GetMultiColumnActorDataTable(null);
+				m_characterGroupGrid[e.ColumnIndex, e.RowIndex].Value = 99;
+			}
 		}
 
 		/// <summary>
@@ -972,10 +984,16 @@ namespace Glyssen.Dialogs
 			if (dropDown == null)
 				return;
 
-			// If there was no actual change, the view model correctly ignores it.
-			m_characterGroupGrid.NotifyCurrentCellDirty(true);
-			if (m_characterGroupGrid.IsCurrentCellInEditMode)
-				m_characterGroupGrid.EndEdit(DataGridViewDataErrorContexts.Commit);
+//			// If there was no actual change, the view model correctly ignores it.
+//			m_characterGroupGrid.NotifyCurrentCellDirty(true);
+//			if (m_characterGroupGrid.IsCurrentCellInEditMode)
+//			{
+//				var currentCell = m_characterGroupGrid.CurrentCell;
+//				m_actorAssignmentViewModel.CreateNewActorAndAssignToGroup(currentCell.FormattedValue.ToString(), FirstSelectedCharacterGroup);
+//				VoiceActorCol.DataSource = m_actorAssignmentViewModel.GetMultiColumnActorDataTable(null);
+//				currentCell.Value = 99;
+//				m_characterGroupGrid.EndEdit(DataGridViewDataErrorContexts.Commit);
+//			}
 
 			dropDown.DropDownClosed -= DropDownOnDropDownClosed;
 		}
