@@ -32,13 +32,12 @@ namespace Glyssen.Dialogs
 		private int m_indexOfRowNotToInvalidate = -1;
 		private bool m_selectingInResponseToDataChange;
 		private List<string> m_characterIdsForSelectedGroup;
-		private bool m_characterDetailsVisible = true;
+		private bool m_characterDetailsVisible = false;
 		//private string m_fmtNoCharactersInGroup;
-		private Font m_hyperlinkFont;
+		private readonly Font m_hyperlinkFont;
 		private string m_fmtMoveCharactersInfo;
 		private List<string> m_pendingMoveCharacters; 
 		private readonly BackgroundWorker m_findCharacterBackgroundWorker;
-		private bool m_programmaticClickOfUpdateGroups = false;
 
 		public VoiceActorAssignmentDlg(Project project)
 		{
@@ -174,6 +173,12 @@ namespace Glyssen.Dialogs
 			m_fmtMoveCharactersInfo = m_lblMovePendingInfo.Text;
 
 			Text = string.Format(Text, m_project.Name);
+
+			string printNonLinkText = m_linkPrint.Text;
+			string printLinkText = LocalizationManager.GetString("DialogBoxes.VoiceActorAssignmentDlg.Instructions.Line1.LinkText", "Print");
+			m_linkPrint.Links.Clear();
+			m_linkPrint.Links.Add(printNonLinkText.IndexOf("{0}", StringComparison.Ordinal), printLinkText.Length);
+			m_linkPrint.Text = string.Format(printNonLinkText, printLinkText);
 		}
 
 		private Image VoiceActorCol_GetSpecialDropDownImageToDraw(DataGridViewMultiColumnComboBoxColumn sender, int rowIndex)
@@ -213,8 +218,7 @@ namespace Glyssen.Dialogs
 
 				if (actorInfoViewModel.Changes.Any())
 				{
-					m_programmaticClickOfUpdateGroups = true;
-					HandleUpdateGroupsClick(m_optimizeButton, e);
+					UpdateGroups();
 
 					VoiceActorCol.DataSource = m_actorAssignmentViewModel.GetMultiColumnActorDataTable(null);
 
@@ -364,7 +368,7 @@ namespace Glyssen.Dialogs
 			UpdateUiForPendingCharacterMove(localizedCharacterIds);
 		}
 
-		private void m_toolStripButtonExport_Click(object sender, EventArgs e)
+		private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			using (var dlg = new ExportRolesForVoiceActorsDlg(new ProjectExporter(m_project)))
 				dlg.ShowDialog(this);
@@ -385,6 +389,7 @@ namespace Glyssen.Dialogs
 				m_lblMovePendingInfo.Text = String.Format(m_fmtMoveCharactersInfo, charactersBldr);
 			}
 			m_tableLayoutPanelMove.Visible = movePending;
+			m_tableLayoutPanelVoiceActorList.Visible = !movePending;
 			// TODO: Try to make this work ---> VoiceActorCol.ReadOnly = movePending;
 			m_characterGroupGrid.Columns[VoiceActorCol.Index].ReadOnly = true;
 			m_linkLabelShowHideDetails.Enabled = !movePending;
@@ -421,6 +426,7 @@ namespace Glyssen.Dialogs
 			}
 			UpdateUiForPendingCharacterMove();
 			m_pendingMoveCharacters = null;
+			m_characterGroupGrid.Invalidate();
 		}
 
 		private void m_btnCancelMove_Click(object sender, EventArgs e)
@@ -463,13 +469,12 @@ namespace Glyssen.Dialogs
 			}
 		}
 
-		private void HandleUpdateGroupsClick(object sender, EventArgs e)
+		private void UpdateGroups()
 		{
 			var nameOfSelectedGroup = (m_characterGroupGrid.SelectedRows.Count == 1)
 				? FirstSelectedCharacterGroup.Name : null;
 
-			m_actorAssignmentViewModel.RegenerateGroups(() => { GenerateGroupsWithProgress(true, false, m_programmaticClickOfUpdateGroups); });
-			m_programmaticClickOfUpdateGroups = false;
+			m_actorAssignmentViewModel.RegenerateGroups(() => { GenerateGroupsWithProgress(true, false, true); });
 			SortByColumn(m_sortedColumn, m_sortedAscending);
 
 			if (nameOfSelectedGroup != null)
@@ -743,6 +748,10 @@ namespace Glyssen.Dialogs
 				m_linkLabelShowHideDetails.Visible = false;
 				m_btnMove.Enabled = false;
 			}
+			if (!m_tableLayoutPanelMove.Visible)
+			{
+				ShowOrHideCharacterDetails(false);
+			}
 		}
 
 		private void UpdateDisplayForSingleCharacterGroupSelected()
@@ -756,7 +765,7 @@ namespace Glyssen.Dialogs
 			{
 				m_characterIdsForSelectedGroup = currentGroup.CharacterIds.ToList();
 				m_characterDetailsGrid.Visible = m_characterDetailsVisible;
-				m_linkLabelShowHideDetails.Visible = !m_project.VoiceActorList.ActiveActors.Any(a => a.IsCameo);
+				m_linkLabelShowHideDetails.Visible = true;
 				m_characterDetailsGrid.RowCount = m_characterIdsForSelectedGroup.Count;
 				m_characterDetailsGrid.Refresh();
 				//m_lblNoCharactersInGroup.Visible = false;
@@ -890,6 +899,11 @@ namespace Glyssen.Dialogs
 			SetRowCount();
 			if (m_actorAssignmentViewModel.CharacterGroups.Any()) // This should always be true, but just to be sure.
 				m_characterGroupGrid.Rows[0].Selected = true;
+
+			var detailsRowStyle = m_tableLayoutPanel.LayoutSettings.RowStyles[m_tableLayoutPanel.GetRow(m_tableLayoutPanelCharacterDetails)];
+			var groupsRowStyle = m_tableLayoutPanel.LayoutSettings.RowStyles[m_tableLayoutPanel.GetRow(m_characterGroupGrid)];
+			detailsRowStyle.Height = 0;
+			groupsRowStyle.Height = 100;
 		}
 
 		protected override void OnDeactivate(EventArgs e)
@@ -1001,6 +1015,12 @@ namespace Glyssen.Dialogs
 			return base.ProcessCmdKey(ref msg, keyData);
 		}
 
+		private void m_linkClose_LinkClicked(object sender, LinkLabelLinkClickedEventArgs e)
+		{
+			DialogResult = DialogResult.OK;
+			Close();
+		}
+
 		#region Events related to the Character Details grid
 		private void m_characterDetailsGrid_CellValueNeeded(object sender, DataGridViewCellValueEventArgs e)
 		{
@@ -1019,7 +1039,7 @@ namespace Glyssen.Dialogs
 				e.Value = m_actorAssignmentViewModel.GetEstimatedHoursForCharacter(characterId);
 		}
 
-		private void HandleShowOrHideCharacterDetails_Click(object sender, EventArgs e)
+		private void HandleShowOrHideCharacterDetails_Click(object sender, LinkLabelLinkClickedEventArgs e)
 		{
 			ShowOrHideCharacterDetails(!m_characterDetailsVisible);
 		}
@@ -1032,7 +1052,9 @@ namespace Glyssen.Dialogs
 			m_characterDetailsVisible = show;
 			if (m_characterDetailsVisible)
 			{
-				m_linkLabelShowHideDetails.Text = (string)m_linkLabelShowHideDetails.Tag;
+				m_linkLabelShowHideDetails.Tag = m_linkLabelShowHideDetails.Text;
+				m_linkLabelShowHideDetails.Text = LocalizationManager.GetString(
+					"DialogBoxes.VoiceActorAssignmentDlg.HideCharacterDetailsLink", "Hide details for {0} group");
 
 				SetCharacterDetailsPanePercentage();
 
@@ -1047,13 +1069,10 @@ namespace Glyssen.Dialogs
 				if (fullHeight > minHeight)
 					m_characterGroupGrid.Height = Math.Min(fullHeight, maxHeight);
 
-				m_linkLabelShowHideDetails.Tag = m_linkLabelShowHideDetails.Text;
-				m_linkLabelShowHideDetails.Text = LocalizationManager.GetString(
-					"DialogBoxes.VoiceActorAssignmentDlg.ShowCharacterDetailsLink", "Show Details");
+				m_linkLabelShowHideDetails.Text = (string)m_linkLabelShowHideDetails.Tag;
 
-				var detailsRowStyle = m_tableLayoutPanel.LayoutSettings.RowStyles[m_tableLayoutPanel.GetRow(m_characterDetailsGrid)];
+				var detailsRowStyle = m_tableLayoutPanel.LayoutSettings.RowStyles[m_tableLayoutPanel.GetRow(m_tableLayoutPanelCharacterDetails)];
 				var groupsRowStyle = m_tableLayoutPanel.LayoutSettings.RowStyles[m_tableLayoutPanel.GetRow(m_characterGroupGrid)];
-				detailsRowStyle.SizeType = SizeType.Absolute;
 				detailsRowStyle.Height = 0;
 				groupsRowStyle.Height = 100;
 			}
@@ -1063,18 +1082,15 @@ namespace Glyssen.Dialogs
 		private void SetCharacterDetailsPanePercentage()
 		{
 			var groupsRowStyle = m_tableLayoutPanel.LayoutSettings.RowStyles[m_tableLayoutPanel.GetRow(m_characterGroupGrid)];
-			var detailsRowStyle = m_tableLayoutPanel.LayoutSettings.RowStyles[m_tableLayoutPanel.GetRow(m_characterDetailsGrid)];
-			detailsRowStyle.SizeType = SizeType.Percent;
+			var detailsRowStyle = m_tableLayoutPanel.LayoutSettings.RowStyles[m_tableLayoutPanel.GetRow(m_tableLayoutPanelCharacterDetails)];
 			//int groupCount = m_actorAssignmentViewModel.CharacterGroups.Count;
 
+			//TODO: put this back to being a calculation
 			// This line was throwing an exception sometimes. Do not restore without determining the problem.
 			//double percentage = (double)groupCount / (groupCount + m_actorAssignmentViewModel.CharacterGroups.Max(g => g.CharacterIds.Count));
 
-			//TODO: put this back to being a calculation
-			double percentage = .4d;
-
-			groupsRowStyle.Height = Math.Min(Math.Max((int)((1 - percentage) * 100), 45), 85);
-			detailsRowStyle.Height = 100 - groupsRowStyle.Height;
+			groupsRowStyle.Height = 70;//Math.Min(Math.Max((int)((1 - percentage) * 100), 45), 85);
+			detailsRowStyle.Height = 30;//100 - groupsRowStyle.Height;
 		}
 		#endregion
 
